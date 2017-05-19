@@ -1,126 +1,78 @@
 <template>
-  <div class="img-box" style="border: 1px solid #d3d3d3;margin: 15px;">
+  <div class="img-box">
     <!--头部-->
     <div style="padding: 10px;background-color: #f9f9f9;display: flex;justify-content: space-between;padding-right: 150px;">
       <div>
-        <Checkbox v-model="single">全选</Checkbox>
+        <Checkbox @on-change="handleCheckAll" v-model="checkall">全选</Checkbox>
         <Button type="info" style="margin-left: 12px;">移动分组</Button>
         <Button type="error" style="margin-left: 12px;">删除</Button>
       </div>
-      <div style="width: 300px;">
+      <div>
         <Upload
-          show-upload-list="false"
+          :show-upload-list="false"
           multiple
-          action="//127.0.0.1:3000/add">
+          :on-success="handleSuccess"
+          action="//127.0.0.1:3000/add/img">
           <Button type="ghost" icon="ios-cloud-upload-outline">上传文件</Button>
         </Upload>
       </div>
     </div>
     <Row>
-      <Col span="21" style="border-right:1px solid #d3d3d3;">
-      <!--图片列表-->
-      <Row>
-        <Col span="6" v-for="(item,i) in lists" :key="i">
-        <div style="margin: 5px;border: 1px solid #d3d3d3;">
-          <div class="img-item" :style="{'background-image':`url(${item.imgUrl})`}"></div>
-          <p style="text-align: center;margin: 3px 0;">
-            <Checkbox v-model="item.check">{{item.imgName}}</Checkbox>
-          </p>
-          <div style="display: flex;justify-content: space-around;padding: 8px 20px;background-color: #f0f0f0;">
-            <i class="edit-img edit-icon"></i>
-            <i class="move-img edit-icon"></i>
-            <i class="del-img edit-icon"></i>
-          </div>
-        </div>
+        <Col span="20" style="border-right:1px solid #d3d3d3;padding: 20px;">
+          <Row :gutter="16">
+            <Col v-for="(item,i) in lists" :key="i" span="6">
+              <div style="border: 1px solid #d3d3d3;margin-bottom: 20px;">
+                <div class="img-item" :style="{'background-image':`url(${item.imgUrl})`}"></div>
+                <p style="text-align: center;margin: 3px 0;">
+                  <Checkbox @on-change="check(item)" v-model="item.check">
+                    <span class="text-point">{{item.imgName}}</span>
+                  </Checkbox>
+                </p>
+                <div style="display: flex;justify-content: space-around;padding: 8px 20px;background-color: #f0f0f0;">
+                  <span class="edit-img edit-icon" @click.stop="showEdit(i,item)">
+                    <i-edit
+                      :value="item.imgName"
+                      labelName="修改图片名字"
+                      @sure="editSure"
+                      @cancel="editCancel(item)"
+                      @closeAll = "closeAllEdit"
+                      :show="item.onEdit"></i-edit>
+                  </span>
+                  <span class="move-img edit-icon"></span>
+                  <span class="del-img edit-icon"></span>
+                </div>
+              </div>
+            </Col>
+          </Row>
         </Col>
-      </Row>
-      </Col>
-      <Col span="3">
-      <ul>
-        <li @click="getGroup(-1)" :class="[activeGroup===0?'active':'']" class="group-list group-list-hover">全部图片({{groupList.length}})</li>
-        <li @click="getGroup(i)" :class="[activeGroup===(i+1)?'active':'']" class="group-list group-list-hover" v-for="(item,i) in groupList" :key="i">
-          <span>{{item.groupName}}</span><span>({{item.count}})</span>
-        </li>
-        <li :class="[showGroupBox? 'active':'']" class="group-list" style="position: relative">
-          <div @click="toggleGroup">
-            <i class="add-group" style=""></i>
-            <span>新建分组</span>
-          </div>
-          <div v-show="showGroupBox" class="add-group-input">
-            <p style="height: 30px;">创建分组</p>
-            <input style="width: 100%;height: 25px;" type="text" v-model="newGroupName">
-            <div style="text-align: right;">
-              <Button type="success" @click="addGroup" style="margin-right: 20px;">确定</Button>
-              <Button @click="showGroupBox=false" type="info">取消</Button>
-            </div>
-            <i class="arrow-top"></i>
-          </div>
-        </li>
-      </ul>
-      </Col>
+        <Col span="4">
+          <ul>
+            <li :class="[activeGroup===0?'active':'']" class="group-list">
+              全部图片(4)
+            </li>
+            <li class="group-list group-list-hover" v-for="(item,i) in groupList">
+              <span>{{item.groupName}}</span><span>({{item.count}})</span>
+            </li>
+          </ul>
+        </Col>
     </Row>
   </div>
 </template>
 <script>
   import testimg from './test.jpg'
+  import iEdit from '../edit'
   export default{
     data(){
       return {
-        single: false,
+        checkall: false,
+        activeList: 0,
         lists: [
           {
             imgUrl: testimg,
             imgName: '会议标注详情',
             curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
-          },
-          {
-            imgUrl: testimg,
-            imgName: '会议标注详情',
-            curGroup: 0,
-            check: false
+            check: false,
+            onEdit: false
           },
         ],
         groupList: [
@@ -154,12 +106,99 @@
       toggleGroup(){
           this.showGroupBox = !this.showGroupBox
       },
+      closeAllEdit(){
+        this.lists.map((item,i)=>{
+          item.onEdit = false;
+        });
+      },
+      handleCheckAll(){
+          this.lists.map((item,i)=>{
+              if(!this.checkall){
+                  this.checkall = false;
+                  this.lists.map((item,i)=>{
+                      item.check = false;
+                  })
+              }else{
+                this.checkall = true;
+                this.lists.map((item,i)=>{
+                  item.check = true;
+                })
+              }
+          })
+      },
+      check(curItem){
+          let num = 0;
+          let length = this.lists.length;
+        this.lists.map((item,i)=>{
+            if(item.check){
+                num++;
+            }
+        });
+        if(num === length && length!==0){
+            this.checkall = true;
+        }else{
+          this.checkall = false;
+        }
+      },
       addGroup(){
         this.showGroupBox = false;
       },
+      handleSuccess(res,file){
+          console.log(file);
+          console.log(res);
+          let img = {
+            imgUrl: res.url,
+            imgName: res.imgName,
+            curGroup: 0,
+            check: false
+        };
+        this.lists.unshift(img);
+        this.check();
+      },
+      /**
+       * 修改图片的名称
+       * @param value
+       * @param i
+       */
+      editSure(value){
+          console.log(value);
+          this.lists[this.activeList].imgName = value;
+          this.lists[this.activeList].onEdit = false;
+      },
+      editCancel(item){
+        item.onEdit = false;
+      },
+      showEdit(i,item){
+          this.lists.map((item,i)=>{
+              item.onEdit = false;
+          });
+          this.activeList = i;
+          item.onEdit = true;
+      }
     },
     computed: {},
+    components:{
+      iEdit
+    },
     mounted(){
+      axios.post('/wechat/add/get')
+        .then((data)=>{
+          /*
+          * {
+           imgUrl: testimg,
+           imgName: '会议标注详情',
+           curGroup: 0,
+           check: false,
+           onEdit: false
+           },
+          * */
+          data.data.forEach((item,i)=>{
+              item.curGroup = 0;
+              item.check = false;
+              item.onEdit = false;
+          });
+          this.lists = data.data
+        })
     }
   }
 </script>
@@ -175,6 +214,7 @@
     height: 18px;
     display: inline-block;
     cursor: pointer;
+    position: relative;
   }
 
   .edit-img {
@@ -250,5 +290,13 @@
     border-bottom-color: #fff;
     top: 1px;
     z-index: 3;
+  }
+  .text-point{
+    overflow: hidden;
+    display: inline-block;
+    width: 120px;
+    vertical-align: middle;
+    text-align: left;
+    white-space: nowrap;
   }
 </style>

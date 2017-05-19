@@ -5,15 +5,22 @@ let express = require('express');
 let router = express.Router();
 let config = require('../config/config');
 let Promise = require('bluebird');
-let request = Promise.promisify(require('request'));
+let request = require('request');
+let rq = Promise.promisify(request);
+let path = require('path');
+let fs = require('fs');
+let db = require('../db/db');
+    db = new db();
+console.log(db);
 
+let formidable = require('formidable');
+
+console.log(path.join(__dirname,'../uploads/'));
 let co = require('co');
 
 let Token = require('../util/updateToken');
 
 let token = new Token(config.wechat);
-
-let db = require('../db/config');
 
 let prefix = 'https://api.weixin.qq.com/cgi-bin/';
 
@@ -26,6 +33,14 @@ let api = {
     tag:{
         create:prefix + 'tags/create?access_token=',
         get:prefix + 'tags/get?access_token='
+    },
+    material:{
+        addMaterial: prefix + 'material/add_material?access_token=', //新增图文素材
+        uploadimg: prefix + 'media/uploadimg?access_token=' //新增图片
+    },
+    group:{
+        get: prefix+'user/get?access_token=',//获得用户列表
+
     }
 };
 
@@ -44,7 +59,7 @@ Wechat.prototype.fetchUserList = function(next_openid){
             .then((data)=>{
                 next_openid = next_openid || '';
                 url = `${api.user.getlist}${data.access_token}&next_openid=${next_openid}`;
-                request({url:url,json:true,method: 'GET'}).then(function(response){
+                rq({url:url,json:true,method: 'GET'}).then(function(response){
                     resolve(response.body);
                 })
             })
@@ -62,7 +77,7 @@ Wechat.prototype.userinfo = function(opendid,lang){
                 lang = lang || 'zh_CH';
                 let access_token = data.access_token;
                 url = api.user.info+access_token+'&openid='+opendid+'&lang='+lang;
-                request({url:url,json:true,method: 'GET'})
+                rq({url:url,json:true,method: 'GET'})
                     .then((response)=>{
                         // console.log(response.body);
                         resolve(response.body);
@@ -70,6 +85,7 @@ Wechat.prototype.userinfo = function(opendid,lang){
             })
     })
 };
+//获得所有的用户
 Wechat.prototype.infoList = function(openidList){
     return new Promise((resolve,reject)=>{
         token.fetchAccessToken()
@@ -79,7 +95,7 @@ Wechat.prototype.infoList = function(openidList){
                 };
                 let access_token = data.access_token;
                 url = api.user.infoList + access_token;
-                request({method:'POST',url:url,json:true,body: body})
+                rq({method:'POST',url:url,json:true,body: body})
                     .then((response)=>{
                         resolve(response.body);
                     })
@@ -100,7 +116,7 @@ Wechat.prototype.createTag = function(tagName){
                     }
                 };
                 let url = api.tag.create+data.access_token;
-                request({method:'POST',url:url,json:true,body: body})
+                rq({method:'POST',url:url,json:true,body: body})
                     .then((response)=>{
                         resolve(response.body);
                     })
@@ -115,17 +131,60 @@ Wechat.prototype.getTags = function(){
         token.fetchAccessToken()
             .then((data)=>{
                 let url = api.tag.get+data.access_token;
-                request({method:'GET',url:url,json:true})
+                rq({method:'GET',url:url,json:true})
                     .then((response)=>{
                         resolve(response.body);
                     })
             })
     })
-}
+};
 
+/**
+ * 新增图片
+ * @param type
+ */
+Wechat.prototype.uploadimg = function(newPath){
+    return new Promise((resolve,reject)=>{
+        token.fetchAccessToken()
+            .then((data)=>{
+                let formData = {
+                    media: fs.createReadStream(newPath),
+                    access_token: data.access_token
+                };
+                let url= api.material.uploadimg + data.access_token;
+                request.post({url:url, formData: formData}, function optionalCallback(err, httpResponse, body) {
+                    if (err) {
+                        return console.error('upload failed:', err);
+                    }
+                    resolve(body);
+                });
+            })
+    })
+};
+/**
+ * 重命名图片
+ * @param path
+ * @param newPath
+ */
+Wechat.prototype.renameImg = function(path,newPath){
+    return new Promise((resolve,reject)=>{
+        fs.rename(path,newPath,(err)=>{
+            if(err){
+                throw err;
+            }else{
+                resolve(newPath)
+            }
+        })
+    })
+};
+//获得分组信息；
+Wechat.prototype.getGroups = function(){
+    return new Promise((resolve,reject)=>{
+
+    })
+};
 
 let wechat = new Wechat();
-
 
 router.post('/', function(req, res, next) {
     co(function *(){
@@ -142,10 +201,74 @@ router.post('/', function(req, res, next) {
         ];
         let userinfolist = yield wechat.infoList(openidList);
         console.log(tag);
-        res.send(tags);
+        res.send('hello');
     }).catch(onerror);
-
 });
+router.post('/img', function(req, res, next) {
+        let form = new formidable.IncomingForm();
+        form.uploadDir = path.join(__dirname,"../uploads");
+        form.parse(req, function(err, fields, files) {
+            let type = files.file.type;
+            switch (type){
+                case 'image/png':
+                    type = '.png';
+                    break;
+                case 'image/jpeg':
+                    type = '.jpg';
+                    break;
+                default:
+                    type = '.jpg'
+            }
+            let oldPath = files.file.path;
+            let name = files.file.name;
+            console.log(name);
+            let newPath = oldPath+type;
+            console.log(type,oldPath,name,newPath);
+            co(function *(){
+               let newpath =  yield wechat.renameImg(oldPath,newPath);
+               // let addMaterial = yield wechat.uploadimg(newpath);
+               //  console.log(addMaterial);
+                let imgData = yield wechat.uploadimg(newpath);
+                console.log(imgData);
+                    imgData = JSON.parse(imgData);
+                    imgData.imgName = name;
+                let isSaved = db.addImg(imgData.url,name);
+                if(isSaved){
+                    res.send(imgData);
+                }else{
+                    res.send({msg:'数据库保存出错'})
+                }
+
+            }).catch(onerror);
+
+            // console.log(media);
+        });
+});
+router.post('/get',(req,res,next)=>{
+    co(function *(){
+        let imgs = yield db.getImgs();
+        let groups = yield db.getGroups();
+        console.log(groups);
+        console.log(groups);
+        console.log(imgs);
+        let result = {
+            imgs: imgs,
+            groups: groups
+        };
+        res.send(result);
+    }).catch(onerror);
+});
+
+router.post('/group',(req,res,next)=>{
+    let groupName = req;
+        console.log(groupName);
+    db.addGroup(groupName)
+        .then((data)=>{
+            res.send('success')
+        })
+})
+
+
 
 function onerror(err) {
     // log any uncaught errors

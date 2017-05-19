@@ -11,7 +11,6 @@ module.exports =  function(info,param){
     // if(!param){
     //     url = `https://api.weixin.qq.com/cgi-bin/material/${param.type}?access_token=${accessToken}`
     // }
-    console.log(url);
     formData = info.formData;
     return new Promise((resolve,reject)=>{
         request.post({url:url, formData: formData},(err, httpResponse, body)=>{

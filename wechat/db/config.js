@@ -2,6 +2,7 @@
  * Created by liuxsen on 2017/5/17.
  */
 let mysql      = require('mysql');
+
 let pool = mysql.createPool({
     host     : '192.168.2.232',
     user     : 'root',
