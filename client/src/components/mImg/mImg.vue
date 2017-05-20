@@ -22,16 +22,15 @@
           <Row :gutter="16">
             <Col v-for="(item,i) in lists" :key="i" span="6">
               <div style="border: 1px solid #d3d3d3;margin-bottom: 20px;">
-                <div class="img-item" :style="{'background-image':`url(${item.imgUrl})`}"></div>
+                <div class="img-item" :style="{'background-image':`url(${item.img_url})`}"></div>
                 <p style="text-align: center;margin: 3px 0;">
                   <Checkbox @on-change="check(item)" v-model="item.check">
-                    <span class="text-point">{{item.imgName}}</span>
+                    <span class="text-point">{{item.img_name}}</span>
                   </Checkbox>
                 </p>
                 <div style="display: flex;justify-content: space-around;padding: 8px 20px;background-color: #f0f0f0;">
                   <span class="edit-img edit-icon" @click.stop="showEdit(i,item)">
                     <i-edit
-                      :value="item.imgName"
                       labelName="修改图片名字"
                       @sure="editSure"
                       @cancel="editCancel(item)"
@@ -48,10 +47,10 @@
         <Col span="4">
           <ul>
             <li :class="[activeGroup===0?'active':'']" class="group-list">
-              全部图片(4)
+              全部图片({{allImgCount}})
             </li>
             <li class="group-list group-list-hover" v-for="(item,i) in groupList">
-              <span>{{item.groupName}}</span><span>({{item.count}})</span>
+              <span>{{item.group_name}}</span><span>({{item.imgCount}})</span>
             </li>
           </ul>
         </Col>
@@ -160,10 +159,17 @@
        * @param value
        * @param i
        */
-      editSure(value){
-          console.log(value);
-          this.lists[this.activeList].imgName = value;
+      editSure(text){
+          this.lists[this.activeList].img_name = text;
           this.lists[this.activeList].onEdit = false;
+          console.log(this.lists[this.activeList]);
+          let curItem = this.lists[this.activeList]
+          axios.post('/wechat/add/imgsinfo',{
+              type: 0,
+              imgId: curItem.id,
+              newName: text
+          }).then((data)=>{
+          })
       },
       editCancel(item){
         item.onEdit = false;
@@ -176,28 +182,40 @@
           item.onEdit = true;
       }
     },
-    computed: {},
+    computed: {
+      allImgCount(){
+        let num=0;
+        this.groupList.forEach((item,i)=>{
+          num+=item.imgCount
+        })
+        return num;
+      },
+      allImgName(){
+        let arr =[];
+        arr = this.groupList.map((item,i)=>{
+          return item.imgName;
+        })
+        return arr;
+      }
+    },
     components:{
       iEdit
     },
     mounted(){
-      axios.post('/wechat/add/get')
+      axios.post('/wechat/add/imgsinfo',{
+        type: '1'
+      })
         .then((data)=>{
-          /*
-          * {
-           imgUrl: testimg,
-           imgName: '会议标注详情',
-           curGroup: 0,
-           check: false,
-           onEdit: false
-           },
-          * */
-          data.data.forEach((item,i)=>{
+          data = data.data;
+          data.imgs.forEach((item,i)=>{
               item.curGroup = 0;
               item.check = false;
               item.onEdit = false;
           });
-          this.lists = data.data
+          this.lists = data.imgs;
+          // this.groupList = data.groups;
+          this.groupList = data.groups;
+          console.log(data);
         })
     }
   }

@@ -1,7 +1,7 @@
 <template>
   <div @click.stop v-if="show" class="box edit-box">
     <p>{{labelName}}</p>
-    <input class="text" v-model="value" type="text">
+    <input class="text" v-model="text" type="text">
     <div class="button-box" style="">
       <div class="sure" @click="sure">确定</div>
       <div class="cancel" @click="cancel">取消</div>
@@ -13,6 +13,7 @@
   export default{
     data(){
       return {
+        text: ''
       }
     },
     props: {
@@ -28,16 +29,18 @@
               return false;
           }
       },
-      value:{
+      eValue:{
           type: String,
           default: function(){
               return '';
           }
       }
     },
+    computed:{
+    },
     methods: {
       sure(){
-          this.$emit('sure',this.value);
+          this.$emit('sure',this.text);
       },
       cancel(){
           this.$emit('cancel');

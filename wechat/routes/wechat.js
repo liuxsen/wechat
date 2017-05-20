@@ -177,12 +177,7 @@ Wechat.prototype.renameImg = function(path,newPath){
         })
     })
 };
-//获得分组信息；
-Wechat.prototype.getGroups = function(){
-    return new Promise((resolve,reject)=>{
 
-    })
-};
 
 let wechat = new Wechat();
 
@@ -204,7 +199,34 @@ router.post('/', function(req, res, next) {
         res.send('hello');
     }).catch(onerror);
 });
-router.post('/img', function(req, res, next) {
+
+router.post('/imgsinfo',(req,res,next)=>{
+  let type = req.body.type*1;
+  let newName = req.body.newName;
+  let imgId = req.body.imgId;
+  if(type === 0){
+    // 修改图片名字
+    db.renameImg(imgId,newName)
+      .then((data)=>{
+        res.send(data);
+      })
+  }else if (type===1) {
+    // 查找图片信息
+    db.getImgs().then((data)=>{
+      console.log('---------------');
+      console.log(data);
+      res.send(data);
+    })
+  }else if(type === '2'){
+
+  }
+})
+
+router.post('/imgs', function(req, res, next) {
+      let type = req.body.type;
+      let newName = req.body.newName;
+      let imgId = req.body.imgId;
+      // 添加图片
         let form = new formidable.IncomingForm();
         form.uploadDir = path.join(__dirname,"../uploads");
         form.parse(req, function(err, fields, files) {
@@ -243,7 +265,9 @@ router.post('/img', function(req, res, next) {
 
             // console.log(media);
         });
+
 });
+
 router.post('/get',(req,res,next)=>{
     co(function *(){
         let imgs = yield db.getImgs();
@@ -259,13 +283,32 @@ router.post('/get',(req,res,next)=>{
     }).catch(onerror);
 });
 
+
+
+// 素材分组
 router.post('/group',(req,res,next)=>{
-    let groupName = req;
-        console.log(groupName);
-    db.addGroup(groupName)
-        .then((data)=>{
-            res.send('success')
-        })
+  co(function*(){
+    let groupName = req.body.groupName;
+    let type = req.body.type;
+    let groupId = req.body.groupId;
+    if(type === '1'){
+      // 新加组
+      let result = yield db.addGroup(groupName);
+      res.send({code:0,msg:'create new imgGroup success'});
+    }else if(type === '0'){
+      // 获得所有组
+      let results = yield db.getGroups();
+      res.send(results);
+    }else if(type === '2'){
+      // 更新组
+      let results = yield db.updateGroup(groupId,groupName);
+      res.send(results);
+    }else if(rype === '3'){
+      // 删除组
+      let results = yield db.deleteGroup(groupId);
+      res.send(results);
+    }
+  }).catch(onerror)
 })
 
 
