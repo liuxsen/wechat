@@ -9,10 +9,10 @@
       </div>
       <div>
         <Upload
-          :show-upload-list="false"
           multiple
+          :show-upload-list = "false"
           :on-success="handleSuccess"
-          action="//127.0.0.1:3000/add/img">
+          action="//127.0.0.1:3000/material/uploadImg">
           <Button type="ghost" icon="ios-cloud-upload-outline">上传文件</Button>
         </Upload>
       </div>
@@ -144,14 +144,14 @@
       },
       handleSuccess(res,file){
           console.log(file);
-          console.log(res);
+          console.log(res[0]);
           let img = {
             imgUrl: res.url,
             imgName: res.imgName,
             curGroup: 0,
             check: false
         };
-        this.lists.unshift(img);
+        this.lists.unshift(res[0]);
         this.check();
       },
       /**
@@ -202,11 +202,11 @@
       iEdit
     },
     mounted(){
-      axios.post('/wechat/add/imgsinfo',{
+      axios.post('/wechat/material/img',{
         type: '1'
       })
         .then((data)=>{
-          data = data.data;
+          /*data = data.data;
           data.imgs.forEach((item,i)=>{
               item.curGroup = 0;
               item.check = false;
@@ -214,7 +214,7 @@
           });
           this.lists = data.imgs;
           // this.groupList = data.groups;
-          this.groupList = data.groups;
+          this.groupList = data.groups;*/
           console.log(data);
         })
     }

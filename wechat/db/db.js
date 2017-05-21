@@ -1,168 +1,177 @@
-/**
- * Created by liuxsen on 2017/5/19.
- */
 let pool = require('./config');
 let Promise = require('bluebird');
 let co = require('co');
-function db (){};
-//添加图片
-db.prototype.addImg = function(url,name){
-    return new Promise((resolve,reject)=>{
-        let sql = `INSERT INTO img values (null,'${name}','${url}',0)`;
-        console.log(sql);
-        console.log('---------------------');
-        console.log(url,name);
-        pool.query(sql, function (error, results, fields) {
-            if (error) reject(error);
-            else{
-                resolve(true);
-            }
-        });
-    });
-};
+let fs = require('fs');
+let Db = function(){};
+let wxApi = require('../util/wxapi');
 
 /**
- * 获得所有的图片信息
- * @return {[type]} [description]
+ * 获得所有的图片以及分组信息
  */
-function getImgs (){
-  return new Promise((resolve,reject)=>{
-    let sql = `select img.id as img_id,img_name,img_url,img_group.id as group_id from img,img_group where
-                img.id = img_group.img_id;`;
-    pool.query(sql, function (error, results, fields) {
-        if (error) reject(err);
-        else{
-          console.log('-----------imgs--------------')
-            resolve(results);
-        }
-    });
-  })
+let getAllImgs = function(){
+	return new Promise((resolve,reject)=>{
+		let sql = `select a.*from material a;`
+		pool.query(sql, function (err, results, fields) {
+			if(err) throw err;
+			else{
+				console.log(results);
+				resolve(results);
+			}
+		})
+	})
+}
+// 获得组的id，组的名字，以及组的图片数量
+let getAllGroups = function(){
+	return new Promise((resolve,reject)=>{
+		let sql = `select 
+					b.id,group_name, count(b.group_name) as groupNum from material a 
+					left join img_group b on 
+					a.group_id = b.id group by group_name;`
+		pool.query(sql, function (err, results, fields) {
+			if(err) throw err;
+			else{
+				resolve(results);
+			}
+		})
+	})
 }
 /**
- * 获得所有的分组信息
- * @return {[type]} [description]
+ * 获得所有的图片
  */
-function getGroups (){
-  return new Promise((resolve,reject)=>{
-    let sql = `select group_name, count(img_id) as imgCount  from img_group t group by group_name;`;
-    pool.query(sql, function (error, results, fields) {
-        if (error) reject(err);
-        else{
-            resolve(results);
-        }
-    });
-  })
+Db.prototype.findAllImg =function(){
+	return new Promise ((resolve,reject)=>{
+		co(function*(){
+			let allimgs = yield getAllImgs();
+			let allGroups = yield getAllGroups();
+			let result = {
+				allimgs: allimgs,
+				allGroups: allGroups
+			}
+			resolve(result)
+		}).catch(onerror)
+	})
+};
+/**
+ * 删除图片
+ * @param  {number}
+ * @return {[type]}
+ */
+Db.prototype.removeImg =function(imgId){
+	let sql = `delete from wechat.material where id = ${imgId};`
+	return new Promise((resolve,reject)=>{
+		pool.query(sql,function(err,results,fields){
+			console.log(results);
+			resolve(results);
+		})
+	})
+};
+
+/**
+ * [addImg description]
+ * @param {[type]} fileName    [文件的真实名字]
+ * @param {[type]} newPathName [文件在磁盘上的名字]
+ */
+function saveImg (fileName,wxImgUrl,newPathName){
+	return new Promise((resolve,reject)=>{
+		// 开始保存到数据库中
+		let sql = `INSERT INTO wechat.material (img_name, img_url,local_name) VALUES ('${fileName}', '${wxImgUrl}','${newPathName}');`
+		pool.query(sql,function(err,results,fields){
+			resolve(results);
+		})
+	})
 }
-/**
- * 获得图片，以及图片分组信息
- * @return {[type]} [description]
- */
-db.prototype.getImgs = function(){
-    return new Promise((resolve,reject)=>{
-        co(function*(){
-          let imgs = yield getImgs();
-          let groups = yield getGroups();
-          let result = {
-            imgs:imgs,
-            groups: groups
-          };
-          console.log(result);
-          resolve(result)
-        }).catch(onerror);
-    });
-};
-db.prototype.renameImg = function(imgId,newName){
-    return new Promise((resolve,reject)=>{
-      console.log(imgId,newName);
-        let sql = `UPDATE img set img_name='${newName}' where id=${imgId}`;
-        pool.query(sql, function (error, results, fields) {
-            if (error) reject(error);
-            else{
-                resolve(results);
-            }
-            // console.log('The solution is: ', fields);
-        });
-    });
-};
-
-db.prototype.updateGroupName = function(opts){
-    return new Promise((resolve,reject)=>{
-        let imgid = opts.imgid;
-        let groupid = opts.groupid;
-        let sql = `UPDATE img set groupId=${groupid} where id=${imgid}`;
-        pool.query(sql, function (error, results, fields) {
-            console.log(results);
-            if (error) reject(err);
-            // console.log('The solution is: ', fields);
-            resolve(results);
-        });
-    });
-};
-
-//获得所有的图片分组
-db.prototype.getGroups = function(){
-    return new Promise((resolve,reject)=>{
-        let sql = `select groupName ,id from wechat.img_group;`;
-        pool.query(sql, function (error, results, fields) {
-            console.log(results);
-            if (error) reject(error);
-            else{
-                resolve(results);
-            }
-            // console.log('The solution is: ', fields);
-        });
-    });
-};
-
-//创建图片分组
-db.prototype.addGroup = function(groupName){
-    return new Promise((resolve,reject)=>{
-        let sql = `INSERT INTO img_group (group_name) values ('${groupName}')`;
-        pool.query(sql, function (error, results, fields) {
-            console.log(results);
-            if (error) reject(error);
-            // console.log('The solution is: ', fields);
-            resolve(results);
-        });
-    });
+// 
+function getEndImg (){
+	return new Promise((resolve,reject)=>{
+		// 获得最后一个图片的信息
+		let sql = `select a.* from material a where id = (select max(b.id) from material b);`
+		pool.query(sql,function(err,results,fields){
+			resolve(results);
+		})
+	})
+}
+Db.prototype.addImg =function(fileName,newPathName){
+	/*
+	return new Promise((resolve,reject)=>{
+		
+	})*/
+	return new Promise((resolve,reject)=>{
+		co(function*(){
+			let result = yield wxApi.uploadImg(newPathName);
+				result = JSON.parse(result);
+			let wxImgUrl = result.url;
+			let saveResult = yield saveImg(fileName,wxImgUrl,newPathName);
+			let endImgInfo = yield getEndImg();
+			resolve(endImgInfo)
+		}).catch(onerror)
+	})
 };
 /**
- * 修改分组
- * @param {[type]} groupName [description]
+ * @param {String 添加分组信息}
  */
-db.prototype.updateGroup = function(groupId,groupName){
-    return new Promise((resolve,reject)=>{
-        let sql = `UPDATE img_group set group_name='${groupName}' where id=${groupId}`;
-        pool.query(sql, function (error, results, fields) {
-            console.log(results);
-            if (error) reject(error);
-            // console.log('The solution is: ', fields);
-            resolve(results);
-        });
-    });
-};
-/**
- * 删除分组
- * @param {[type]} groupName [description]
- */
-db.prototype.updateGroup = function(groupId){
-    return new Promise((resolve,reject)=>{
-        let sql = `delete from img_group where id=${groupId}`;
-        pool.query(sql, function (error, results, fields) {
-            console.log(results);
-            if (error) reject(error);
-            // console.log('The solution is: ', fields);
-            resolve(results);
-        });
-    });
+Db.prototype.addGroup =function(groupName){
+	let sql = `INSERT INTO wechat.img_group (group_name) VALUES ('${groupName}');`
+	return new Promise((resolve,reject)=>{
+		pool.query(sql,(err,results,fields)=>{
+			console.log(results);
+			resolve(results);
+		})
+	})
 };
 
-function onerror(err) {
-    // log any uncaught errors
-    // co will not throw any errors you do not handle!!!
-    // HANDLE ALL YOUR ERRORS!!!
-    console.error(err.stack);
+/**
+ * 移动分组信息
+ * @param  {Number}
+ * @param  {Number}
+ * @return {[type]}
+ */
+Db.prototype.moveGroup =function(imgId,groupId){
+	return new Promise((resolve,reject)=>{
+		let sql = `UPDATE wechat.material SET group_id='${groupId}' WHERE id='${imgId}'`;
+		pool.query(sql,(err,results,fields)=>{
+			if(err) reject(err);
+			else{
+				resolve(results);
+			}
+		})
+	})
+};
+/**
+ * @param  {删除分组}
+ * @return {[type]}
+ */
+let deleteImgsGroup = function(groupId){
+	return new Promise((resolve,reject)=>{
+		let sql = `UPDATE wechat.material SET group_id=NULL WHERE group_id=${groupId};`;
+		pool.query(sql,(err,results,fields)=>{
+			if(err) reject(err);
+			else{
+				resolve(results);
+			}
+		})
+	})
 }
 
+Db.prototype.removeGroup =function(groupId){
+	return new Promise((resolve,reject)=>{
+		co(function*(){
+			yield deleteImgsGroup(groupId);
+			let sql = `DELETE FROM wechat.img_group WHERE id=${groupId};`;
+			pool.query(sql,(err,results,fields)=>{
+				if(err) reject(err);
+				else{
+					resolve(results);
+				}
+			})
+		}).catch(onerror)
+	})
+};
+
+
+
+function onerror(err){
+	console.log(err);
+}
+let db = new Db();
 
 module.exports = db;
