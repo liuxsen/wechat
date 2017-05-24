@@ -42,6 +42,7 @@ let wxApi ={
                         if (err) {
                             return console.error('upload failed:', err);
                         }
+                        console.log(body);
                         resolve(body);
                     });
                 })

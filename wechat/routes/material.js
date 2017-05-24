@@ -47,6 +47,10 @@ router.post('/img',(req,res,next)=>{
             // 添加图片 完成
             let result = yield db.addImg(imgName,imgUrl);
             res.send(result);
+        }else if(type === 7){
+        //    获得相应组的图片
+            let result = yield db.getImgGroupId(groupId);
+            res.send(result);
         }
     }).catch(onerror)
 })

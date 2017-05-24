@@ -106,6 +106,17 @@ Db.prototype.addImg =function(fileName,newPathName){
 		}).catch(onerror)
 	})
 };
+Db.prototype.getImgGroupId = function(groupId){
+	return new Promise((resolve,reject)=>{
+		let sql = `SELECT a.*,b.group_name FROM wechat.material a left join img_group b on a.group_id=b.id where a.group_id =${groupId};`;
+		pool.query(sql,(err,results,fields)=>{
+			if(err) reject(err);
+			else{
+				resolve(results);
+			}
+		})
+	})
+};
 /**
  * @param {String 添加分组信息}
  */

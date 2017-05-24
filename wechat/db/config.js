@@ -4,8 +4,8 @@
 let mysql      = require('mysql');
 
 let pool = mysql.createPool({
-    // host     : '192.168.2.232',
-    host     : '192.168.1.102',
+    host     : '192.168.2.232',
+    // host     : '192.168.1.102',
     connectionLimit : 3,
     user     : 'root',
     password : 'mysql',

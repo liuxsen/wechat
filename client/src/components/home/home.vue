@@ -9,49 +9,44 @@
             </div>
           </div>
         </header>
-        <div class="box">
-          <div class="menu">
-            <Menu :theme="theme3" :active-name="activeName" @on-select="onselect">
-              <Menu-group title="内容管理">
-                  <Menu-item name="1" @click="activeName=1">
-                      <Icon type="document-text"></Icon>
-                      素材管理
-                  </Menu-item>
-                  <Menu-item name="2" @click="activeName=2">
-                      <Icon type="chatbubbles"></Icon>
-                      用户管理
-                  </Menu-item>
-              </Menu-group>
-              <Menu-group title="统计分析">
-                  <Menu-item name="3" @click="activeName=3">
-                      <Icon type="heart"></Icon>
-                      用户留存
-                  </Menu-item>
-                  <Menu-item name="4" @click="activeName=4">
-                      <Icon type="heart-broken"></Icon>
-                      流失用户
-                  </Menu-item>
-              </Menu-group>
-            </Menu>
-          </div>
+
+      <div class="box">
+        <div class="menu" :class="">
+          <Menu mode="horizontal" @on-select="onselect" :theme="theme3" active-name="1">
+            <Menu-item name="1">
+              <Icon type="ios-paper"></Icon>
+              内容管理
+            </Menu-item>
+            <Menu-item name="2">
+              <Icon type="ios-people"></Icon>
+              文章管理
+            </Menu-item>
+            <Menu-item name="3">
+              <Icon type="settings"></Icon>
+              综合设置
+            </Menu-item>
+          </Menu>
+        </div>
           <div class="content">
             <m-img v-if="activeName==='1'"></m-img>
+            <marticle v-if="activeName==='2'"></marticle>
           </div>
         </div>
     </div>
 </template>
 <script>
   import mImg from '../mImg'
+  import marticle from '../marticle'
   console.log(mImg);
   export default{
       data(){
           return {
             theme3: 'light',
-            activeName: '1'
+            activeName: '3'
           }
       },
-    components:{
-        mImg
+      components:{
+          mImg,marticle
       },
       props: {},
       methods: {
@@ -78,11 +73,11 @@
     margin-top: 40px;
     margin-left: auto;
     margin-right: auto;
-    display: flex;
+    /*display: flex;*/
   }
   .content{
     margin: 20px;
-    width: 920px;
+    width: 1160px;
     border: 1px solid #d3d3d3;
   }
 </style>

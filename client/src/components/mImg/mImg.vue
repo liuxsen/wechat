@@ -38,7 +38,7 @@
                       :show="item.onEdit"></i-edit>
                   </span>
                   <span class="move-img edit-icon"></span>
-                  <span class="del-img edit-icon"></span>
+                  <span @click="delImg(i,item)" class="del-img edit-icon"></span>
                 </div>
               </div>
             </Col>
@@ -49,8 +49,8 @@
             <li :class="[activeGroup===0?'active':'']" class="group-list">
               全部图片({{allImgCount}})
             </li>
-            <li class="group-list group-list-hover" v-for="(item,i) in groupList">
-              <span>{{item.group_name}}</span><span>({{item.imgCount}})</span>
+            <li @click="getGroupImg(item)" class="group-list group-list-hover" v-for="(item,i) in groupList">
+              <span>{{item.group_name}}</span><span>({{item.groupNum}})</span>
             </li>
           </ul>
         </Col>
@@ -99,6 +99,37 @@
     },
     props: {},
     methods: {
+//        获得相应组的图片
+      getGroupImg(item){
+          console.log(item);
+          let groupId = item.id;
+          axios.post('/wechat/material/img',{
+              type: 7,
+            groupId: groupId
+          }).then((data)=>{
+            console.log(data);
+            data = data.data;
+            data.forEach((item,i)=>{
+              item.curGroup = 0;
+              item.check = false;
+              item.onEdit = false;
+            });
+            this.lists = data;
+          })
+      },
+        /**
+         * 删除图片
+         */
+      delImg(i,item){
+          console.log(item);
+          this.lists.splice(i,1);
+          axios.post('/wechat/material/img',{
+              type: 3,
+              imgId: item.id
+          }).then((data)=>{
+              console.log(1);
+          })
+      },
       getGroup(i){
           this.activeGroup = i+1;
       },
@@ -186,7 +217,7 @@
       allImgCount(){
         let num=0;
         this.groupList.forEach((item,i)=>{
-          num+=item.imgCount
+          num+=item.groupNum;
         })
         return num;
       },
@@ -203,18 +234,17 @@
     },
     mounted(){
       axios.post('/wechat/material/img',{
-        type: '1'
+        type: 1
       })
         .then((data)=>{
-          /*data = data.data;
-          data.imgs.forEach((item,i)=>{
+          data = data.data;
+          data.allimgs.forEach((item,i)=>{
               item.curGroup = 0;
               item.check = false;
               item.onEdit = false;
           });
-          this.lists = data.imgs;
-          // this.groupList = data.groups;
-          this.groupList = data.groups;*/
+          this.lists = data.allimgs;
+           this.groupList = data.allGroups;
           console.log(data);
         })
     }
