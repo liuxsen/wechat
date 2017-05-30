@@ -8,6 +8,8 @@ var cors = require('cors')
 var index = require('./routes/index');
 var users = require('./routes/users');
 var material = require('./routes/material');
+let editorUpload = require('./routes/editorUpload');
+
 
 var app = express();
 app.use(cors());
@@ -22,8 +24,11 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'uploads')));
+
 
 app.use('/', index);
+app.use('/ueditor',editorUpload);
 app.use('/material', material);
 app.use('/users', users);
 

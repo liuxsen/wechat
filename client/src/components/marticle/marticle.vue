@@ -15,18 +15,18 @@
         </li>
       </ul>
       <div class="edit-box">
-        <VueUEditor ueditorPath="../../static/ueditor/" @ready="editorReady">
+        <!-- <VueUEditor ueditorPath="../../static/ueditor/" @ready="editorReady">
           <div><input type="text" placeholder="请输入标题"></div>
           <div><input type="text" placeholder="请输入作者"></div>
-        </VueUEditor>
+        </VueUEditor> -->
       </div>
     </div>
 
   </div>
 </template>
 <script>
-  import VueUEditor from 'vue-ueditor'
-  console.log(VueUEditor);
+  // import VueUEditor from 'vue-ueditor'
+  // console.log(VueUEditor);
   export default{
     data(){
       return {

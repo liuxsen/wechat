@@ -1,42 +1,22 @@
 <template>
     <div>
-        <header>
-          <div style="border:1px solid red;height: 100%;width: 1200px;margin: 0 auto;display: flex;justify-content: space-between;">
-            <div>
-            </div>
-            <div style="line-height: 60px;">
-              退出
-            </div>
+    <!-- 头部消息 -->
+        <div class="head_box"> 
+          <div class="inner wrp">
+            <h1 class="logo">
+              <a href=""></a>
+            </h1>
           </div>
-        </header>
-
-      <div class="box">
-        <div class="menu" :class="">
-          <Menu mode="horizontal" @on-select="onselect" :theme="theme3" active-name="1">
-            <Menu-item name="1">
-              <Icon type="ios-paper"></Icon>
-              内容管理
-            </Menu-item>
-            <Menu-item name="2">
-              <Icon type="ios-people"></Icon>
-              文章管理
-            </Menu-item>
-            <Menu-item name="3">
-              <Icon type="settings"></Icon>
-              综合设置
-            </Menu-item>
-          </Menu>
         </div>
-          <div class="content">
-            <m-img v-if="activeName==='1'"></m-img>
-            <marticle v-if="activeName==='2'"></marticle>
-          </div>
+        <!-- 新建图文消息 -->
+        <div class="box-content">
+          <router-view></router-view> 
         </div>
     </div>
 </template>
 <script>
   import mImg from '../mImg'
-  import marticle from '../marticle'
+  // import marticle from '../marticle'
   console.log(mImg);
   export default{
       data(){
@@ -46,7 +26,7 @@
           }
       },
       components:{
-          mImg,marticle
+          mImg,
       },
       props: {},
       methods: {
@@ -61,23 +41,46 @@
   }
 </script>
 <style scoped>
-  header{
-    height: 60px;
-    width: 100%;
-    background-color: #FFFFFF;
-  }
-  .box{
+ .head_box{
+    position: relative;
+    background-color: #fff;
+    border-top: 4px solid #44b549;
+    border-bottom: 1px solid #d9dadc;
+ }
+ .head_box .inner.wrp {
     width: 1200px;
-    background-color: #FFFFFF;
-    border-color: #aaaaaa;
-    margin-top: 40px;
     margin-left: auto;
     margin-right: auto;
-    /*display: flex;*/
-  }
-  .content{
-    margin: 20px;
-    width: 1160px;
-    border: 1px solid #d3d3d3;
-  }
+}
+.head_box .inner {
+    height: 60px;
+}
+.head_box .inner:after {
+    content: "\200B";
+    display: block;
+    height: 0;
+    clear: both;
+}
+ .logo {
+    float: left;
+    padding-top: 10px;
+    font-size: 24px;
+}
+ .logo a {
+    display: block;
+    width: 250px;
+    height: 40px;
+    overflow: hidden;
+    text-decoration: none;
+}
+.logo a:before {
+    display: inline-block;
+    content: url();
+}
+.box-content{
+  width: 1200px;
+  border: 1px solid #D9DADC;
+  background-color: #ffffff;
+  margin: 37px auto;
+}
 </style>
