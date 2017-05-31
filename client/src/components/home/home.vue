@@ -1,7 +1,7 @@
 <template>
     <div>
     <!-- 头部消息 -->
-        <div class="head_box"> 
+        <div class="head_box">
           <div class="inner wrp">
             <h1 class="logo">
               <a href=""></a>
@@ -10,7 +10,7 @@
         </div>
         <!-- 新建图文消息 -->
         <div class="box-content">
-          <router-view></router-view> 
+          <router-view></router-view>
         </div>
     </div>
 </template>
@@ -81,6 +81,6 @@
   width: 1200px;
   border: 1px solid #D9DADC;
   background-color: #ffffff;
-  margin: 37px auto;
+  margin: 37px auto 100px;
 }
 </style>

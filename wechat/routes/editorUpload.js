@@ -7,6 +7,7 @@ let rq = Promise.promisify(request);
 var ueditor = require("ueditor")
 let path = require('path');
 let fs = require('fs');
+let co = require('co');
 let db = require('../db/db');
 let updateToken = require('../util/updateToken');
 let wechat = new updateToken(config.wechat);
@@ -51,15 +52,6 @@ router.get('',(req,res,next)=>{
 })
 
 
-function wxuploadImg (stream,filename){
-	return new Promise((resolve,reject)=>{
-		// https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=ACCESS_TOKEN
-		wechat.fetchAccessToken()
-			.then((token)=>{
-				console.log(token)
-			})
-	})
-}
 
 let img_url = path.join(__dirname,'../uploads');
 
@@ -76,7 +68,27 @@ function renameFile(oldName,newName){
 		})
 	})
 }
-
+//换取微信图片的地址
+function wxuploadImg (newPath){
+    return new Promise((resolve,reject)=>{
+        // https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=ACCESS_TOKEN
+        wechat.fetchAccessToken()
+            .then((token)=>{
+                //上传图文消息，换取图片地址
+                let url = `https://api.weixin.qq.com/cgi-bin/media/uploadimg?access_token=${token.access_token}`;
+                let formData = {
+                    media: fs.createReadStream(newPath),
+                    access_token: token.access_token
+                };
+                request.post({url:url, formData: formData}, (err, httpResponse, body)=> {
+                    if (err) {
+                        return console.error('upload failed:', err);
+                    }
+                    resolve(JSON.parse(body));
+                });
+            })
+    })
+}
 router.post('',upload.single('upfile'),(req,res,next)=>{
 	console.log(req.query)
 	// 文件原始名字
@@ -84,32 +96,36 @@ router.post('',upload.single('upfile'),(req,res,next)=>{
 	// 文件mime类型
 	let mimetype = req.file.mimetype;
 	let path = req.file.path;
-	let fix = 'jpg'
+	let fix = 'jpg';
 	switch(mimetype){
 		case 'image/png':
 			fix = '.png';
 			break;
 		case 'image/jpeg':
-			fix = '.jpg'
+			fix = '.jpg';
 			break;
 		default:
-			fix = '.jpg'
+			fix = '.jpg';
 			break;
 	}
 	let newPath = path+fix;
-	renameFile(path,newPath)
-		.then((data)=>{
-			console.log('重命名-----'+data);
-			let obj = {
-			    state: "SUCCESS",
-			    url: 'http://127.0.0.1:3000/'+req.file.filename+fix,
-			    title: originalname,
-			    original: originalname
-			}
-			console.log(obj);
-			res.setHeader('Content-Type', 'text/html');
-			res.send(obj);
-		})
-})
+	co(function*(){
+		yield renameFile(path,newPath);
+		let imgUrl = yield wxuploadImg(newPath);
+        let obj = {
+            state: "SUCCESS",
+            url: imgUrl.url,
+            title: originalname,
+            original: originalname
+        };
+        console.log(obj);
+        res.setHeader('Content-Type', 'application/json');
+        res.send(obj);
+	}).catch(onerror);
+});
 
+
+function onerror(err){
+    console.log(err);
+}
 module.exports = router;
